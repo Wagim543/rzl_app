@@ -46,23 +46,30 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _checkSupabaseConnection() async {
     try {
-      final client = Supabase.instance.client;
-      final session = client.auth.currentSession;
+    final client = Supabase.instance.client;
+    final response = await client.from('test_items').select().limit(1);
+    if (response.isNotEmpty) {
+      final itemName = response[0]['name'];
       setState(() {
-        _connectionStatus = "✅ Connected to Supabase (no active session — that's normal)";
+        _connectionStatus = "✅ Fetched from Supabase: \"$itemName\"";
       });
-    } catch (e) {
+    } else {
       setState(() {
-        _connectionStatus = "❌ Connection error: $e";
+        _connectionStatus = "⚠️ Connected, but no rows found";
       });
     }
-  }
-
-  void _incrementCounter() {
+  } catch (e) {
     setState(() {
-      _counter++;
+      _connectionStatus = "❌ Connection error: $e";
     });
   }
+}
+
+void _incrementCounter() {
+  setState(() {
+    _counter++;
+  });
+}
 
   @override
   Widget build(BuildContext context) {
