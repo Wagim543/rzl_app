@@ -49,14 +49,15 @@ Used by `categories`, `municipalities`, `barangays`, `places`, `events`, `announ
 ```sql
 alter table events enable row level security;
 
--- Guests and everyone else read published, non-archived events.
+-- Guests and everyone else read published events.
+--
+-- No time window in the policy: "upcoming only" is a query concern, and a link
+-- shared before an event must still open after it ends. Drafts and archived
+-- rows are never visible to guests.
 create policy "events read published"
 on events for select
 to anon, authenticated
-using (
-  (status = 'published' and (ends_at is null or ends_at > now() - interval '30 days'))
-  or is_staff()
-);
+using (status = 'published' or is_staff());
 
 -- Only staff insert.
 create policy "events insert staff"
@@ -81,6 +82,12 @@ using (is_staff());
 > **Why `to anon` matters.** If you forget `anon`, guests get zero rows and the app looks
 > broken to the panel while working perfectly on your logged-in phone. This is the single
 > most common RLS failure in this project.
+>
+> **Grants are separate from policies.** A policy narrows the rows a role may see; it does
+> not grant access to the table at all. Supabase does grant `anon` and `authenticated` on
+> new `public` tables by default, but the guest read path is the one thing this product
+> cannot lose, so `20260101000300_rls_core.sql` grants it explicitly. Both layers must be
+> present: TC-001 exercises the guest read path and TC-078 the guest write path.
 
 ### Shape B — own rows only (user content)
 

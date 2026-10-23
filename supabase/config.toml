@@ -1,0 +1,47 @@
+# Supabase CLI configuration for RZL.
+#
+# Committed on purpose: every developer must apply the same schema and the same
+# reference data, or two machines disagree about what "the app works" means.
+# No secrets belong in this file — it contains local-only ports and paths.
+
+project_id = "rzl_app"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+# Makes `supabase db reset` load supabase/seed.sql automatically, instead of
+# every developer remembering to run it by hand.
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[studio]
+enabled = true
+port = 54323
+
+# Banner uploads (FR-29). Limiting type and size here as well as in the client
+# means a misconfigured client cannot fill the bucket.
+[storage]
+enabled = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/png", "image/jpeg", "image/webp"]
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false

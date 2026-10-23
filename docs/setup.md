@@ -73,20 +73,47 @@ Add a VS Code launch config so you cannot forget:
 }
 ```
 
-## 5. Database (local Supabase)
+## 5. Database
 
-Optional but recommended — it makes migrations reproducible in the defense.
+Migrations and seed data live in `supabase/migrations/` and `supabase/seed.sql`, and
+`supabase/config.toml` wires the seed into `db reset`. Never make schema changes in the
+dashboard: they cannot be reproduced on another machine and do not survive a reset.
+
+### Local (recommended for development)
+
+Requires Docker.
 
 ```bash
 supabase start
-supabase db reset                    # migrations + seed
-supabase gen types dart --local > lib/core/supabase/database.dart
+supabase db reset                    # migrations, then seed.sql — automatic
 ```
 
-Local studio runs at `http://localhost:54323`.
+Local Studio runs at `http://localhost:54323`. Point `env.json` at the `API URL` and
+`anon key` printed by `supabase start`.
 
-If the team prefers one shared dev project instead, that is fine for speed — but migrations
-must still be SQL files in `supabase/migrations/`, never dashboard-only edits.
+### Remote (the shared dev project)
+
+```bash
+supabase login                                  # once per machine, opens a browser
+supabase link --project-ref <project-ref>       # asks for the database password
+supabase db push                                # applies supabase/migrations/*
+```
+
+`db push` applies migrations only — it does not load demo data. To get the seeded events,
+either insert them by hand or, on a development project **with no real data**, run:
+
+```bash
+supabase db reset --linked           # DESTRUCTIVE: drops and rebuilds the database
+```
+
+Confirm the guest read path after pushing, because a missing `to anon` grant looks like an
+empty app rather than an error:
+
+```sql
+set role anon;
+select count(*) from events;         -- must be greater than zero
+reset role;
+```
 
 ## 6. Verify the setup
 

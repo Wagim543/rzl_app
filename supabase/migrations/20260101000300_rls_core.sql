@@ -24,6 +24,25 @@ as $$
   );
 $$;
 
+-- ─── Table grants ───────────────────────────────────────────────────────────
+-- Supabase grants privileges on new public tables to `anon`/`authenticated` by
+-- default, but the single hard requirement of this product is that guests can
+-- read published events. Relying on a default we did not write is not a risk
+-- worth taking, so the grants are explicit. Grants decide *which tables* a role
+-- may touch; RLS below decides *which rows*. Both are required.
+
+grant usage on schema public to anon, authenticated;
+
+grant select on public.municipalities, public.barangays, public.categories
+  to anon, authenticated;
+grant insert, update, delete on public.municipalities, public.barangays, public.categories
+  to authenticated;
+
+grant select on public.events to anon, authenticated;
+grant insert, update, delete on public.events to authenticated;
+
+grant select, insert, update on public.profiles to authenticated;
+
 -- ─── Reference tables: public read, staff write ─────────────────────────────
 
 alter table public.municipalities enable row level security;
@@ -95,13 +114,15 @@ alter table public.events enable row level security;
 
 -- `to anon` is mandatory. Without it, guests see an empty feed while developers
 -- signed in see everything — the classic capstone demo failure (TC-001).
+--
+-- The policy deliberately does not filter on time. "Upcoming only" is a query
+-- concern (`ends_at >= now()` in the repository), not an access rule: a link
+-- shared before an event must still open afterwards. Drafts and archived rows
+-- are never visible to guests.
 create policy "events read published"
   on public.events for select
   to anon, authenticated
-  using (
-    (status = 'published' and ends_at > now() - interval '30 days')
-    or public.is_staff()
-  );
+  using (status = 'published' or public.is_staff());
 
 create policy "events insert staff"
   on public.events for insert
