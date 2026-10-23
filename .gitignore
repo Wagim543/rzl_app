@@ -46,3 +46,14 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# RZL — local configuration and signing material (never commit)
+env.json
+*.jks
+*.keystore
+android/key.properties
+google-services.json
+
+# RZL — local Supabase
+supabase/.branches/
+supabase/.temp/
