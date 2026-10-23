@@ -57,3 +57,7 @@ google-services.json
 # RZL — local Supabase
 supabase/.branches/
 supabase/.temp/
+
+# Kotlin/Gradle build caches created by the Android build
+android/.kotlin/
+android/.gradle/

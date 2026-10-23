@@ -36,6 +36,15 @@ for each row execute function public.set_updated_at();
 
 -- Create the profile row on signup. security definer so the insert succeeds
 -- before the user has any session-scoped privileges of their own.
+--
+-- The two drops are defensive. This project inherited a hand-made prototype that
+-- may already have installed this trigger on auth.users; `create trigger` would
+-- then fail and abort the whole migration. `supabase db reset` normally clears
+-- it, but a half-applied schema can leave it behind, and a migration that fails
+-- once leaves the CLI refusing further pushes.
+drop trigger if exists on_auth_user_created on auth.users;
+drop function if exists public.handle_new_user() cascade;
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
